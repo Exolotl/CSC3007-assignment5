@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html class="has-background-black">
+    <head>
+        <meta charset = "UTF-8">
+        <title>Stuart's Info Visualization Assignment 5</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.css" />
+        <style>
+
+            #map {
+                width: auto;
+                height: 80vh;
+            }
+
+            .transparent-tooltip {
+                background: transparent;
+                border: 0px solid red;
+                box-shadow: none;
+                font-size: 19px;
+                font-weight: bold;
+                text-align: center;
+                -webkit-text-fill-color: white;
+                -webkit-text-stroke-width: 0.3px;
+                -webkit-text-stroke-color: black;
+            }
+
+            .transparent-tooltip::before {
+                border: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <section class="m-5">
+            <div class="column">
+                <div class="box">
+                    <h2 class="title is-2">
+                        Singapore Geospatial PSI Map
+                    </h2>
+                    <div id="map" style="border-style: solid">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.8.0/leaflet.js"></script>
+        <script>
+
+            let options = {
+                    center: [1.35735, 103.82], 
+                    zoom: 12
+            };
+
+            var tiles = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+            var map = new L.Map('map', options).addLayer(tiles);
+            
+            getPSI();
+
+            async function getPSI() {
+                let response = await fetch("https://api.data.gov.sg/v1/environment/psi");
+                let data = await response.json();
+
+                console.log(data);
+
+                let region = data.region_metadata;
+                let psiDaily = data.items[0].readings.psi_twenty_four_hourly;
+
+                console.log(psiDaily)
+
+                for (var i in region) {
+
+                    let name = region[i].name;
+                    let latlng = [
+                        region[i].label_location.latitude, 
+                        region[i].label_location.longitude
+                    ];
+
+                    console.log(psiDaily[name]);
+                    console.log(psiScale(psiDaily[name])['color']);
+
+                    var circle = L.circle( latlng, {
+                        color: 'grey',
+                        fillColor: psiScale(psiDaily[name])['color'],
+                        fillOpacity: 0.3,
+                        radius: 3000
+                    }).addTo(map);
+                    circle.bindTooltip( 'Region: ' + name + '<br>' + 'PSI: ' + psiDaily[name] + '<br>' + psiScale(psiDaily[name])['index'], 
+                        {
+                            permanent: true, 
+                            direction : 'bottom',
+                            className: 'transparent-tooltip',
+                            offset: [0, -52]
+                        }
+                    ).openPopup();
+
+                
+                }
+            }
+
+            function psiScale(value) {
+                var scale = new Object();
+                if ( value <= 50) {
+                    scale['index'] = 'Good';
+                    scale['color'] = 'lightgreen'
+                } else if (value > 50 && value <= 100) {
+                    scale['index'] = 'Moderate';
+                    scale['color'] = 'green'
+                } else if (value > 100 && value <= 200) {
+                    scale['index'] = 'FAB733';
+                    scale['color'] = 'yellow'
+                } else if (value > 200 && value <= 300) {
+                    scale['index'] = 'Very Unhealthy';
+                    scale['color'] = 'orange'
+                } else if (value > 300) {
+                    scale['index'] = 'Hazardous';
+                    scale['color'] = 'red'
+                }
+                return scale;
+            }
+
+
+        </script>
+    </body>
+</html>
