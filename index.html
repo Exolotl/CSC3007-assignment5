@@ -18,16 +18,24 @@
                 background: transparent;
                 border: 0px solid red;
                 box-shadow: none;
-                font-size: 19px;
+                font-size: 22px;
                 font-weight: bold;
                 text-align: center;
                 -webkit-text-fill-color: white;
-                -webkit-text-stroke-width: 0.3px;
+                -webkit-text-stroke-width: 0.5px;
                 -webkit-text-stroke-color: black;
             }
 
             .transparent-tooltip::before {
                 border: none;
+            }
+
+            .circle {
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            opacity: 0.6;
             }
 
         </style>
@@ -56,7 +64,27 @@
             var tiles = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
             var map = new L.Map('map', options).addLayer(tiles);
             
+
+            var legend = L.control({position: 'bottomright'});
+            
             getPSI();
+
+            legend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'info legend');
+                labels = ['<strong>Level</strong>'],
+                levels = ['Good','Moderate','Unhealthy','Very Unhealthy','Hazardous'];
+                colors = ['lightgreen','green','yellow','orange','red'];
+
+                for (var i = 0; i < levels.length; i++) {
+                    div.innerHTML += 
+                    labels.push(
+                        '<i class="circle" style="background:' + colors[i] + '"></i> ' +
+                    (levels[i] ? levels[i] : '+'));
+                }
+                div.innerHTML = labels.join('<br>');
+            return div;
+            };
+            legend.addTo(map);
 
             async function getPSI() {
                 let response = await fetch("https://api.data.gov.sg/v1/environment/psi");
@@ -80,46 +108,51 @@
                     console.log(psiDaily[name]);
                     console.log(psiScale(psiDaily[name])['color']);
 
+                    let displayName = capitalize(name)
+
                     var circle = L.circle( latlng, {
                         color: 'grey',
                         fillColor: psiScale(psiDaily[name])['color'],
                         fillOpacity: 0.3,
                         radius: 3000
                     }).addTo(map);
-                    circle.bindTooltip( 'Region: ' + name + '<br>' + 'PSI: ' + psiDaily[name] + '<br>' + psiScale(psiDaily[name])['index'], 
+                    circle.bindTooltip( displayName + '<br>' + 'PSI: ' + psiDaily[name] + '<br>' + psiScale(psiDaily[name])['level'], 
                         {
                             permanent: true, 
                             direction : 'bottom',
                             className: 'transparent-tooltip',
-                            offset: [0, -52]
+                            offset: [0, -60]
                         }
                     ).openPopup();
 
-                
                 }
             }
 
             function psiScale(value) {
                 var scale = new Object();
                 if ( value <= 50) {
-                    scale['index'] = 'Good';
+                    scale['level'] = 'Good';
                     scale['color'] = 'lightgreen'
                 } else if (value > 50 && value <= 100) {
-                    scale['index'] = 'Moderate';
+                    scale['level'] = 'Moderate';
                     scale['color'] = 'green'
                 } else if (value > 100 && value <= 200) {
-                    scale['index'] = 'FAB733';
+                    scale['level'] = 'FAB733';
                     scale['color'] = 'yellow'
                 } else if (value > 200 && value <= 300) {
-                    scale['index'] = 'Very Unhealthy';
+                    scale['level'] = 'Very Unhealthy';
                     scale['color'] = 'orange'
                 } else if (value > 300) {
-                    scale['index'] = 'Hazardous';
+                    scale['level'] = 'Hazardous';
                     scale['color'] = 'red'
                 }
                 return scale;
             }
 
+            function capitalize(str) {
+                const lower = str.toLowerCase()
+                return str.charAt(0).toUpperCase() + lower.slice(1)
+            }
 
         </script>
     </body>
