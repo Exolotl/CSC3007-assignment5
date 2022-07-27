@@ -22,7 +22,7 @@
                 font-weight: bold;
                 text-align: center;
                 -webkit-text-fill-color: white;
-                -webkit-text-stroke-width: 0.5px;
+                -webkit-text-stroke-width: 1px;
                 -webkit-text-stroke-color: black;
             }
 
@@ -61,7 +61,13 @@
                     zoom: 12
             };
 
-            var tiles = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+            var tiles = new L.tileLayer('https://maps-{s}.onemap.sg/v3/Grey/{z}/{x}/{y}.png', {
+                detectRetina: true,
+                maxZoom: 18,
+                minZoom: 11,
+                //Do not remove this attribution
+                attribution: '<img src="https://www.onemap.gov.sg/docs/maps/images/oneMap64-01.png" style="height:20px;width:20px;"/> OneMap | Map data &copy; contributors, <a href="http://SLA.gov.sg">Singapore Land Authority</a>'
+            });
             var map = new L.Map('map', options).addLayer(tiles);
             
 
